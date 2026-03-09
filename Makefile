@@ -87,7 +87,7 @@ server: $(STATIC_LIB_server) $(SHARED_LIB_server)
 client: $(STATIC_LIB_client) $(SHARED_LIB_client)
 
 test: $(TEST_BINS)
-	@for t in $(TEST_BINS); do ./$$t || exit 1; done
+	@for t in $(TEST_BINS); do echo "RUNNING $$t..."; ./$$t && echo "PASSED" || exit 1; done
 
 $(BIN_DIR)/test_%: $(TESTS_DIR)/%.c $(STATIC_LIB)
 	@mkdir -p $(@D)
