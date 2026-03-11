@@ -6,7 +6,7 @@ SHARED ?= 0
 CONFIG := release
 
 CC          := gcc
-CFLAGS      := -Wall -Wextra -Werror -Iinclude -fPIC -MMD -MP
+CFLAGS      := -Wall -Wextra -Werror -Iinclude -Isrc -fPIC -MMD -MP
 
 AR          := ar
 ARFLAGS     := rcs
@@ -37,7 +37,7 @@ else
 endif
 
 # Files
-SRCS_COMMON     =
+SRCS_COMMON     = src/internal/httpssn.c src/internal/dynarr.c src/internal/io.c src/internal/uri.c src/error.c src/internal/utils.c
 SRCS_SERVER     = src/server.c
 SRCS_CLIENT     = src/client.c
 

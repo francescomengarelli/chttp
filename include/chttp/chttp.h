@@ -6,7 +6,7 @@
     #define CHTTP_CLIENT
 #endif
 
-#define CHTTP_LOCALHOST "localhost"
+#include "error.h" // IWYU pragma: export
 
 #ifdef CHTTP_SERVER
 #include "server.h" // IWYU pragma: export

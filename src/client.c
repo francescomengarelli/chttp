@@ -1,6 +1,7 @@
 #include "chttp/client.h"
-#include "chttp/chttp.h"
 
+#include <errno.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -11,41 +12,60 @@
 #include <netdb.h>
 #include <unistd.h>
 
-int chttp_get(char *req, char *hostname, char *port, char **out_res) {
-    port = port == NULL ? "http" : port;
-    int sockfd;
+#include "chttp/error.h"
+
+#include "internal/io.h"
+#include "internal/uri.h"
+#include "internal/log.h"
+
+int chttp_post(char *uristr, char *body, char **out_res) {
+    chttp_error chttperr = 0;
     struct addrinfo hints, *ai;
+
+    _uri *uri;
+    if((chttperr = _uri_create(uristr, &uri))) {
+        return chttperr;
+    }
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
-    if (hostname == NULL || strcmp(hostname, CHTTP_LOCALHOST) == 0) {
-        hostname = NULL;
-        hints.ai_flags = AI_PASSIVE;
-    }
 
     int result;
-    if((result = getaddrinfo(hostname, port, &hints, &ai)) < 0) {
-        return -1;
+    if((result = getaddrinfo(uri->host, uri->port, &hints, &ai)) < 0) {
+        return CHTTP_ERR_GAI(result);
+    }
+    _log("connecting to %s:%s", uri->host, uri->port);
+
+    _uri_destroy(uri);
+    int sockfd = -1;
+    for (struct addrinfo *p = ai; p != NULL; p = p->ai_next) {
+        if((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0) {
+            continue;
+        }
+
+        if(connect(sockfd, p->ai_addr, p->ai_addrlen) < 0) {
+            close(sockfd);
+            continue;
+        }
+        int yes = 1;
+        setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof yes);
+        break;
+    }
+    if (sockfd < 0) {
+        return CHTTP_ERR_SYS(errno);
     }
 
-    if((sockfd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol)) < 0) {
-        freeaddrinfo(ai);
-        return -1;
+
+    if((chttperr = _sendall(sockfd, body, strlen(body) + 1)) != CHTTP_OK) {
+        return chttperr;
     }
 
-    int yes = 1;
-    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof yes);
+    char *res;
 
-    if(connect(sockfd, ai->ai_addr, ai->ai_addrlen) < 0) {
-        freeaddrinfo(ai);
-        return -1;
+    if ((chttperr = _recvall(sockfd, &res)) != CHTTP_OK) {
+        return chttperr;
     }
-
-    send(sockfd, req, strlen(req), 0);
-
-    char *res = calloc(1, 1024);
-    recv(sockfd, res, 1023, 0);
 
     close(sockfd);
 
