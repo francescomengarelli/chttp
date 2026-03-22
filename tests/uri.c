@@ -6,12 +6,13 @@
 
 #define try_uri(str)\
 {\
-_uri *uri = _stouri(str);\
+_uri *uri;\
+_uri_create(str, &uri);\
 if(!uri) {\
     fprintf(stderr, "failed to generate uri '%s'\n", str);\
     return -1;\
 }\
-_freeuri(uri);\
+_uri_destroy(uri);\
 }\
 
 int main(void)

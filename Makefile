@@ -37,7 +37,7 @@ else
 endif
 
 # Files
-SRCS_COMMON     = src/internal/httpssn.c src/internal/dynarr.c src/internal/io.c src/internal/uri.c src/error.c src/internal/utils.c
+SRCS_COMMON     = src/internal/httpssn.c src/internal/dynarr.c src/internal/io.c src/internal/uri.c src/error.c src/internal/utils.c src/internal/http_parser.c
 SRCS_SERVER     = src/server.c
 SRCS_CLIENT     = src/client.c
 
